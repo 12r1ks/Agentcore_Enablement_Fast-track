@@ -2600,29 +2600,6 @@ wheels = [
 ]
 
 [[package]]
-name = "sessionagent"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "aws-bedrock-token-generator" },
-    { name = "aws-opentelemetry-distro" },
-    { name = "bedrock-agentcore", extra = ["strands-agents"] },
-    { name = "botocore", extra = ["crt"] },
-    { name = "mcp" },
-    { name = "strands-agents", extra = ["openai"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aws-bedrock-token-generator", specifier = ">=1.1.0" },
-    { name = "aws-opentelemetry-distro", specifier = "~=0.18.0" },
-    { name = "bedrock-agentcore", extras = ["strands-agents"], specifier = ">=1.18.1" },
-    { name = "botocore", extras = ["crt"], specifier = ">=1.35.0" },
-    { name = "mcp", specifier = ">=1.28.1,<2.0.0" },
-    { name = "strands-agents", extras = ["openai"], specifier = ">=1.15.0" },
-]
-
-[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2694,6 +2671,29 @@ wheels = [
 openai = [
     { name = "aws-bedrock-token-generator" },
     { name = "openai" },
+]
+
+[[package]]
+name = "supportagent"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "aws-bedrock-token-generator" },
+    { name = "aws-opentelemetry-distro" },
+    { name = "bedrock-agentcore", extra = ["strands-agents"] },
+    { name = "botocore", extra = ["crt"] },
+    { name = "mcp" },
+    { name = "strands-agents", extra = ["openai"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aws-bedrock-token-generator", specifier = ">=1.1.0" },
+    { name = "aws-opentelemetry-distro", specifier = "~=0.18.0" },
+    { name = "bedrock-agentcore", extras = ["strands-agents"], specifier = ">=1.18.1" },
+    { name = "botocore", extras = ["crt"], specifier = ">=1.35.0" },
+    { name = "mcp", specifier = ">=1.28.1,<2.0.0" },
+    { name = "strands-agents", extras = ["openai"], specifier = ">=1.15.0" },
 ]
 
 [[package]]

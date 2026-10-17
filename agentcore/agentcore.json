@@ -1,18 +1,18 @@
 {
   "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
-  "name": "SessionDemo",
+  "name": "CustomerSupport",
   "version": 1,
   "managedBy": "CDK",
   "tags": {
     "agentcore:created-by": "agentcore-cli",
-    "agentcore:project-name": "SessionDemo"
+    "agentcore:project-name": "CustomerSupport"
   },
   "runtimes": [
     {
-      "name": "SessionAgent",
+      "name": "SupportAgent",
       "build": "CodeZip",
       "entrypoint": "main.py",
-      "codeLocation": "app/SessionAgent/",
+      "codeLocation": "app/SupportAgent/",
       "runtimeVersion": "PYTHON_3_14",
       "networkMode": "PUBLIC",
       "protocol": "HTTP",
