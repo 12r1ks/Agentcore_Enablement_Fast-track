@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "name": "default",
+    "description": "Personal learning account",
+    "account": "715075932719",
+    "region": "eu-central-1"
+  }
+]

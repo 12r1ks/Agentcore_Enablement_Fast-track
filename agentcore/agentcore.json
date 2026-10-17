@@ -7,7 +7,18 @@
     "agentcore:created-by": "agentcore-cli",
     "agentcore:project-name": "SessionDemo"
   },
-  "runtimes": [],
+  "runtimes": [
+    {
+      "name": "SessionAgent",
+      "build": "CodeZip",
+      "entrypoint": "main.py",
+      "codeLocation": "app/SessionAgent/",
+      "runtimeVersion": "PYTHON_3_14",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "additionalPolicies": ["mantle-policy.json"] 
+    }
+  ],
   "memories": [],
   "knowledgeBases": [],
   "credentials": [],

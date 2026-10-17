@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowMantleBearerToken",
+      "Effect": "Allow",
+      "Action": "bedrock-mantle:CallWithBearerToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowMantleInferenceForGemma",
+      "Effect": "Allow",
+      "Action": "bedrock-mantle:CreateInference",
+      "Resource": "arn:aws:bedrock-mantle:*:715075932719:project/default"
+    }
+  ]
+}

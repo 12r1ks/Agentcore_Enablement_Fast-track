@@ -1,3 +1,17 @@
 {
-  "targets": {}
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "SessionAgent": {
+            "runtimeId": "SessionDemo_SessionAgent-tSAEIBHI6B",
+            "runtimeArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:runtime/SessionDemo_SessionAgent-tSAEIBHI6B",
+            "roleArn": "arn:aws:iam::715075932719:role/AgentCore-SessionDemo-def-ApplicationAgentSessionAg-tblzJnJM70G4"
+          }
+        },
+        "stackName": "AgentCore-SessionDemo-default",
+        "deployHash": "a7a0927ec25f106d"
+      }
+    }
+  }
 }
