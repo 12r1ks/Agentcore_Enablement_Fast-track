@@ -8,7 +8,15 @@ from support_tools.refunds import refund_customer
 
 
 def refund_args(**overrides) -> dict:
-    return {"order_id": "123", "amount": 50, "reason": "Faulty item", "idempotency_key": "operation-123", **overrides}
+    # customer_id is added by the agent's CustomerContextHook, never by the model.
+    return {
+        "customer_id": "CUST-001",
+        "order_id": "123",
+        "amount": 50,
+        "reason": "Faulty item",
+        "idempotency_key": "operation-123",
+        **overrides,
+    }
 
 
 def error_code(args) -> str:
@@ -81,6 +89,28 @@ def test_refund_cannot_exceed_remaining_amount(db):
 
 def test_unknown_order(db):
     assert error_code(refund_args(order_id="999")) == "ORDER_NOT_FOUND"
+
+
+def test_cannot_refund_another_customers_order(db):
+    assert error_code(refund_args(order_id="125")) == "ORDER_NOT_FOUND"
+    assert db.refunds == {}
+    assert db.orders["125"]["refunded_total"] == Decimal("0")
+
+
+def test_cannot_read_back_another_customers_refund_with_their_key(db):
+    refund_customer(refund_args(customer_id="CUST-002", order_id="125", idempotency_key="their-key"))
+    assert error_code(refund_args(order_id="125", idempotency_key="their-key")) == "ORDER_NOT_FOUND"
+
+
+def test_retry_after_full_refund_still_returns_original(db):
+    first = refund_customer(refund_args(amount=163.99))
+    assert refund_customer(refund_args(amount=163.99))["refund"] == first["refund"]
+
+
+@pytest.mark.parametrize("customer_id", [None, "", 1])
+def test_missing_customer_context_is_rejected(db, customer_id):
+    assert error_code(refund_args(customer_id=customer_id)) == "CUSTOMER_CONTEXT_MISSING"
+    assert db.refunds == {}
 
 
 @pytest.mark.parametrize(

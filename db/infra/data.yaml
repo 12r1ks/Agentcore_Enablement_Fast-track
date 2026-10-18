@@ -21,9 +21,23 @@ Resources:
       AttributeDefinitions:
         - AttributeName: order_id
           AttributeType: S
+        - AttributeName: customer_id
+          AttributeType: S
+        - AttributeName: placed_at
+          AttributeType: S
       KeySchema:
         - AttributeName: order_id
           KeyType: HASH
+      # Lists one customer's orders, newest first, without scanning the table.
+      GlobalSecondaryIndexes:
+        - IndexName: customer_id-index
+          KeySchema:
+            - AttributeName: customer_id
+              KeyType: HASH
+            - AttributeName: placed_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       Tags:
         - Key: agentcore:project-name
           Value: !Ref ProjectName

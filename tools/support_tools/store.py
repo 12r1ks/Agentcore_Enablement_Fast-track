@@ -3,12 +3,14 @@
 from functools import lru_cache
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 from .errors import ToolError
 
 ORDERS_TABLE = "CustomerSupport-orders"
+ORDERS_BY_CUSTOMER_INDEX = "customer_id-index"
 CUSTOMERS_TABLE = "CustomerSupport-customers"
 REFUNDS_TABLE = "CustomerSupport-refunds"
 
@@ -54,6 +56,25 @@ def _get(table: str, key: dict) -> dict | None:
 
 def get_order(order_id: str) -> dict | None:
     return _get(ORDERS_TABLE, {"order_id": order_id})
+
+
+def list_orders(customer_id: str) -> list[dict]:
+    """A customer's orders, newest first. Index reads are eventually consistent, so a just-written change may lag briefly."""
+    query = {
+        "IndexName": ORDERS_BY_CUSTOMER_INDEX,
+        "KeyConditionExpression": Key("customer_id").eq(customer_id),
+        "ScanIndexForward": False,
+    }
+    orders = []
+    try:
+        while True:
+            page = _dynamodb().Table(ORDERS_TABLE).query(**query)
+            orders += page["Items"]
+            if "LastEvaluatedKey" not in page:
+                return orders
+            query["ExclusiveStartKey"] = page["LastEvaluatedKey"]
+    except (BotoCoreError, ClientError) as error:
+        raise _backend_error(error) from error
 
 
 def get_customer(customer_id: str) -> dict | None:

@@ -25,6 +25,14 @@ def invalid_parameter(name: str, reason: str) -> ToolError:
     return ToolError("INVALID_PARAMETER", f"Parameter '{name}' {reason}.", details={"parameter": name})
 
 
+def caller_customer_id(args: dict) -> str:
+    """The signed-in customer. Added to the arguments by the agent runtime from its session state, never by the model."""
+    customer_id = args.get("customer_id")
+    if not isinstance(customer_id, str) or not customer_id:
+        raise ToolError("CUSTOMER_CONTEXT_MISSING", "The session has no authenticated customer.")
+    return customer_id
+
+
 def required_string(args: dict, name: str, max_length: int = 64) -> str:
     value = args.get(name)
     if not isinstance(value, str) or not value.strip():

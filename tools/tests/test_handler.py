@@ -23,10 +23,10 @@ def test_unknown_tool():
 
 
 def test_decimal_values_are_returned_as_json_numbers(db):
-    result = lambda_handler({"order_id": "123"}, context("orders___get_order_status"))
-    assert result["total"] == 163.99
-    assert result["refunded_total"] == 0
-    assert isinstance(result["refunded_total"], int)
+    result = lambda_handler({"order_id": "123", "customer_id": "CUST-001"}, context("orders___get_orders"))
+    assert result["order"]["total"] == 163.99
+    assert result["order"]["refunded_total"] == 0
+    assert isinstance(result["order"]["refunded_total"], int)
 
 
 def test_missing_client_context():

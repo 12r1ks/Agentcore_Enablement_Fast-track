@@ -9,6 +9,12 @@
             "roleArn": "arn:aws:iam::715075932719:role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht"
           }
         },
+        "memories": {
+          "UserPreference": {
+            "memoryId": "CustomerSupport_UserPreference-FfAp5g9pL2",
+            "memoryArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:memory/CustomerSupport_UserPreference-FfAp5g9pL2"
+          }
+        },
         "mcp": {
           "gateways": {
             "support-gateway": {
@@ -18,13 +24,47 @@
               "targets": {
                 "company-info": {
                   "targetId": "VDLBLKROWT"
+                },
+                "refunds": {
+                  "targetId": "C8R52TOYJR"
+                },
+                "orders": {
+                  "targetId": "K5ERH25HNA"
                 }
               }
             }
           }
         },
+        "policyEngines": {
+          "SupportPolicies": {
+            "policyEngineId": "CustomerSupport_SupportPolicies-hf5owob7hb",
+            "policyEngineArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:policy-engine/CustomerSupport_SupportPolicies-hf5owob7hb"
+          }
+        },
+        "policies": {
+          "SupportPolicies/PermitCompanyInfo": {
+            "policyId": "PermitCompanyInfo-6alih468ac",
+            "policyArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:policy-engine/CustomerSupport_SupportPolicies-hf5owob7hb/policy/PermitCompanyInfo-6alih468ac",
+            "engineName": "SupportPolicies"
+          },
+          "SupportPolicies/PermitOrderReads": {
+            "policyId": "PermitOrderReads-lvdffusibv",
+            "policyArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:policy-engine/CustomerSupport_SupportPolicies-hf5owob7hb/policy/PermitOrderReads-lvdffusibv",
+            "engineName": "SupportPolicies"
+          },
+          "SupportPolicies/PermitRefundUpToLimit": {
+            "policyId": "PermitRefundUpToLimit-gdhjj4nas2",
+            "policyArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:policy-engine/CustomerSupport_SupportPolicies-hf5owob7hb/policy/PermitRefundUpToLimit-gdhjj4nas2",
+            "engineName": "SupportPolicies"
+          },
+          "SupportPolicies/ForbidRefundOverLimit": {
+            "policyId": "ForbidRefundOverLimit-5le1494lmi",
+            "policyArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:policy-engine/CustomerSupport_SupportPolicies-hf5owob7hb/policy/ForbidRefundOverLimit-5le1494lmi",
+            "engineName": "SupportPolicies"
+          }
+        },
         "stackName": "AgentCore-CustomerSupport-default",
-        "deployHash": "b6d28e0687f15c70"
+        "deployHash": "7e9e4270e5c2545b"
       }
     }
   }

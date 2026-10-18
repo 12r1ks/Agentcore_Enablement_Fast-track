@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from . import store
-from .errors import ToolError, invalid_parameter, required_string
+from .errors import ToolError, caller_customer_id, invalid_parameter, required_string
 
 # Matches the Refund Policy in lumora-company-info.md. The Gateway's Cedar policy enforces the
 # same limit before this code runs; checking here too keeps the backend safe on its own.
@@ -35,6 +35,7 @@ def _replay(existing: dict, order_id: str, amount: Decimal) -> dict:
 
 def refund_customer(args: dict) -> dict:
     """Tool: refund part or all of an order. Retrying with the same idempotency_key returns the original refund."""
+    customer_id = caller_customer_id(args)
     order_id = required_string(args, "order_id")
     idempotency_key = required_string(args, "idempotency_key", max_length=128)
     reason = required_string(args, "reason", max_length=500)
@@ -47,13 +48,16 @@ def refund_customer(args: dict) -> dict:
             details={"limit": AUTO_APPROVAL_LIMIT},
         )
 
+    # Ownership is checked before the idempotency replay, so another customer's refund
+    # can't be read back by sending their order ID and key.
+    order = store.get_order(order_id)
+    if order is None or order["customer_id"] != customer_id:
+        raise ToolError("ORDER_NOT_FOUND", f"No order with ID '{order_id}' for this customer.", details={"order_id": order_id})
+
     existing = store.get_refund(idempotency_key)
     if existing is not None:
         return _replay(existing, order_id, amount)
 
-    order = store.get_order(order_id)
-    if order is None:
-        raise ToolError("ORDER_NOT_FOUND", f"No order with ID '{order_id}'.", details={"order_id": order_id})
     remaining = order["total"] - order["refunded_total"]
     if amount > remaining:
         raise ToolError(
