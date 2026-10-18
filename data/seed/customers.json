@@ -1,0 +1,41 @@
+[
+  {
+    "customer_id": "CUST-001",
+    "name": "Emma de Vries",
+    "email": "emma.devries@example.com",
+    "phone": "+31 6 5550 0101",
+    "country": "NL",
+    "shipping_address": {
+      "line1": "Voorbeeldstraat 12",
+      "postal_code": "1011 AB",
+      "city": "Amsterdam"
+    },
+    "created_at": "2024-03-14"
+  },
+  {
+    "customer_id": "CUST-002",
+    "name": "Jonas Weber",
+    "email": "jonas.weber@example.com",
+    "phone": "+49 151 5550 0202",
+    "country": "DE",
+    "shipping_address": {
+      "line1": "Beispielweg 7",
+      "postal_code": "04109",
+      "city": "Leipzig"
+    },
+    "created_at": "2023-11-02"
+  },
+  {
+    "customer_id": "CUST-003",
+    "name": "Priya Nair",
+    "email": "priya.nair@example.com",
+    "phone": "+44 7700 900303",
+    "country": "GB",
+    "shipping_address": {
+      "line1": "14 Sample Road",
+      "postal_code": "M1 1AA",
+      "city": "Manchester"
+    },
+    "created_at": "2025-06-21"
+  }
+]

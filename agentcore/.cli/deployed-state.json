@@ -3,14 +3,28 @@
     "default": {
       "resources": {
         "runtimes": {
-          "SessionAgent": {
-            "runtimeId": "SessionDemo_SessionAgent-tSAEIBHI6B",
-            "runtimeArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:runtime/SessionDemo_SessionAgent-tSAEIBHI6B",
-            "roleArn": "arn:aws:iam::715075932719:role/AgentCore-SessionDemo-def-ApplicationAgentSessionAg-tblzJnJM70G4"
+          "SupportAgent": {
+            "runtimeId": "CustomerSupport_SupportAgent-0886e04wIQ",
+            "runtimeArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:runtime/CustomerSupport_SupportAgent-0886e04wIQ",
+            "roleArn": "arn:aws:iam::715075932719:role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht"
           }
         },
-        "stackName": "AgentCore-SessionDemo-default",
-        "deployHash": "a7a0927ec25f106d"
+        "mcp": {
+          "gateways": {
+            "support-gateway": {
+              "gatewayId": "customersupport-support-gateway-klz7btjjhn",
+              "gatewayArn": "arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn",
+              "gatewayUrl": "https://customersupport-support-gateway-klz7btjjhn.gateway.bedrock-agentcore.eu-central-1.amazonaws.com/mcp",
+              "targets": {
+                "company-info": {
+                  "targetId": "VDLBLKROWT"
+                }
+              }
+            }
+          }
+        },
+        "stackName": "AgentCore-CustomerSupport-default",
+        "deployHash": "b6d28e0687f15c70"
       }
     }
   }

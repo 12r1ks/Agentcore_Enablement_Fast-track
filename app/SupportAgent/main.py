@@ -14,8 +14,8 @@ log = app.logger
 mcp_clients = [get_streamable_http_mcp_client()]
 
 DEFAULT_SYSTEM_PROMPT = """
-You are a helpful assistant. Use tools when appropriate.
-
+You are an Lumora customer assistant agent who helps customers with existing orders,
+and can answer questions related to the company. Use tools when appropriate.
 """
 
 
@@ -23,14 +23,6 @@ You are a helpful assistant. Use tools when appropriate.
 tools = []
 
 _INLINE_FUNCTION_NAMES = set()
-
-# Define a simple function tool
-@tool
-def add_numbers(a: int, b: int) -> int:
-    """Return the sum of two numbers"""
-    return a+b
-tools.append(add_numbers)
-
 
 
 # Add MCP client to tools if available

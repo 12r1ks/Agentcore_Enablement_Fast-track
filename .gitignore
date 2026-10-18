@@ -1,0 +1,7 @@
+# Build output (Lambda package, packaged templates)
+build/
+
+# Python
+__pycache__/
+.venv/
+.pytest_cache/

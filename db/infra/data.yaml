@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Data layer for the CustomerSupport agent: orders and customers (read by the order
+  tools) and refunds (the refund tool's idempotency ledger). Deployed separately from
+  the AgentCore stack so agent redeploys and CLI updates never touch the data.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: CustomerSupport
+    Description: Prefix for table names. The tool Lambdas reference these names, so keep them in sync.
+
+Resources:
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub "${ProjectName}-orders"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: order_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: order_id
+          KeyType: HASH
+      Tags:
+        - Key: agentcore:project-name
+          Value: !Ref ProjectName
+
+  CustomersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub "${ProjectName}-customers"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: customer_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: customer_id
+          KeyType: HASH
+      Tags:
+        - Key: agentcore:project-name
+          Value: !Ref ProjectName
+
+  RefundsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub "${ProjectName}-refunds"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: idempotency_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: idempotency_key
+          KeyType: HASH
+      Tags:
+        - Key: agentcore:project-name
+          Value: !Ref ProjectName
+
+Outputs:
+  OrdersTableName:
+    Value: !Ref OrdersTable
+  OrdersTableArn:
+    Value: !GetAtt OrdersTable.Arn
+  CustomersTableName:
+    Value: !Ref CustomersTable
+  CustomersTableArn:
+    Value: !GetAtt CustomersTable.Arn
+  RefundsTableName:
+    Value: !Ref RefundsTable
+  RefundsTableArn:
+    Value: !GetAtt RefundsTable.Arn

@@ -16,7 +16,9 @@
       "runtimeVersion": "PYTHON_3_14",
       "networkMode": "PUBLIC",
       "protocol": "HTTP",
-      "additionalPolicies": ["mantle-policy.json"] 
+      "additionalPolicies": [
+        "mantle-policy.json"
+      ]
     }
   ],
   "memories": [],
@@ -24,7 +26,168 @@
   "credentials": [],
   "evaluators": [],
   "onlineEvalConfigs": [],
-  "agentCoreGateways": [],
+  "agentCoreGateways": [
+    {
+      "name": "support-gateway",
+      "protocolType": "MCP",
+      "description": "Lumora customer support tools",
+      "targets": [
+        {
+          "name": "company-info",
+          "targetType": "lambda",
+          "toolDefinitions": [
+            {
+              "name": "get_company_policy",
+              "description": "Return one section of Lumora's official company information. Use it to answer questions about Lumora's policies and the company instead of guessing. Use it for guidance on how to handle customer support questions. The topic can be one of: about, contact, order_statuses, shipping, delays, returns, refunds, warranty, payment, privacy, escalation, faq.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "topic": {
+                    "type": "string",
+                    "description": "One of: about, contact, order_statuses, shipping, delays, returns, refunds, warranty, payment, privacy, escalation, faq."
+                  }
+                },
+                "required": ["topic"]
+              }
+            }
+          ],
+          "compute": {
+            "host": "Lambda",
+            "implementation": {
+              "language": "Python",
+              "path": "tools",
+              "handler": "support_tools.handler.lambda_handler"
+            },
+            "pythonVersion": "PYTHON_3_13",
+            "timeout": 10,
+            "memorySize": 256
+          }
+        },
+        {
+          "name": "orders",
+          "targetType": "lambda",
+          "toolDefinitions": [
+            {
+              "name": "get_order_status",
+              "description": "Look up an order by its ID. Returns status, items, totals, shipping and tracking details, the delay reason if the order is DELAYED, refund history, and the customer_id of the customer who placed it.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "The order ID, for example \"123\"."
+                  }
+                },
+                "required": ["order_id"]
+              }
+            },
+            {
+              "name": "get_customer_info",
+              "description": "Look up a customer by customer ID. Returns name, email, phone, country and shipping address. Get the customer_id from get_order_status.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string",
+                    "description": "The customer ID, for example \"CUST-001\"."
+                  }
+                },
+                "required": ["customer_id"]
+              }
+            }
+          ],
+          "compute": {
+            "host": "Lambda",
+            "implementation": {
+              "language": "Python",
+              "path": "tools",
+              "handler": "support_tools.handler.lambda_handler"
+            },
+            "pythonVersion": "PYTHON_3_13",
+            "timeout": 10,
+            "memorySize": 256,
+            "iamPolicy": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "ReadOrdersAndCustomers",
+                  "Effect": "Allow",
+                  "Action": ["dynamodb:GetItem"],
+                  "Resource": [
+                    "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-orders",
+                    "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-customers"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "refunds",
+          "targetType": "lambda",
+          "toolDefinitions": [
+            {
+              "name": "refund_customer",
+              "description": "Refund part or all of an order to the customer's original payment method. Check the order with get_order_status first. Refunds over 1000 EUR are not allowed and need a human support manager. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "The order ID to refund."
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "Refund amount in the order's currency, with at most 2 decimal places."
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Short reason for the refund, for example \"Faulty item\"."
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "description": "Unique ID for this refund operation, for example \"operation-123\"."
+                  }
+                },
+                "required": ["order_id", "amount", "reason", "idempotency_key"]
+              }
+            }
+          ],
+          "compute": {
+            "host": "Lambda",
+            "implementation": {
+              "language": "Python",
+              "path": "tools",
+              "handler": "support_tools.handler.lambda_handler"
+            },
+            "pythonVersion": "PYTHON_3_13",
+            "timeout": 10,
+            "memorySize": 256,
+            "iamPolicy": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "ReadAndUpdateOrders",
+                  "Effect": "Allow",
+                  "Action": ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+                  "Resource": "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-orders"
+                },
+                {
+                  "Sid": "ReadAndWriteRefundLedger",
+                  "Effect": "Allow",
+                  "Action": ["dynamodb:GetItem", "dynamodb:PutItem"],
+                  "Resource": "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-refunds"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "authorizerType": "AWS_IAM",
+      "enableSemanticSearch": true,
+      "exceptionLevel": "NONE"
+    }
+  ],
   "policyEngines": [],
   "configBundles": [],
   "abTests": [],

@@ -1,0 +1,16 @@
+[project]
+name = "support-tools"
+version = "0.1.0"
+description = "Lumora customer support tools (behind the AgentCore Gateway)"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "boto3>=1.43.114",
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

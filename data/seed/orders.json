@@ -1,0 +1,198 @@
+[
+  {
+    "order_id": "123",
+    "customer_id": "CUST-001",
+    "status": "DELAYED",
+    "placed_at": "2026-10-05",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-THM-02", "name": "Lumora Thermo Smart Thermostat", "quantity": 1, "unit_price": 129.00 },
+      { "sku": "LUM-BLB-04", "name": "Lumora Glow Bulb 4-pack", "quantity": 1, "unit_price": 34.99 }
+    ],
+    "subtotal": 163.99,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 0.00,
+      "carrier": "PostNL",
+      "tracking_number": "PN-3SLUM0001230",
+      "shipped_at": "2026-10-06",
+      "promised_delivery": "2026-10-10",
+      "estimated_delivery": "2026-10-20"
+    },
+    "delay": {
+      "reason": "CARRIER_BACKLOG",
+      "note": "PostNL has a parcel backlog at the Amsterdam sorting centre."
+    },
+    "total": 163.99,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "124",
+    "customer_id": "CUST-001",
+    "status": "DELIVERED",
+    "placed_at": "2026-09-20",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-SPK-01", "name": "Lumora Echo Speaker", "quantity": 2, "unit_price": 79.00 },
+      { "sku": "LUM-DBL-01", "name": "Lumora Doorbell Cam", "quantity": 1, "unit_price": 149.00 }
+    ],
+    "subtotal": 307.00,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 0.00,
+      "carrier": "PostNL",
+      "tracking_number": "PN-3SLUM0001240",
+      "shipped_at": "2026-09-21",
+      "promised_delivery": "2026-09-26",
+      "delivered_at": "2026-09-25"
+    },
+    "total": 307.00,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "125",
+    "customer_id": "CUST-002",
+    "status": "DELIVERED",
+    "placed_at": "2026-10-02",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-CAM-08", "name": "Lumora Vision Pro 8-Camera Kit", "quantity": 1, "unit_price": 1899.00 },
+      { "sku": "LUM-HUB-01", "name": "Lumora Hub Max", "quantity": 1, "unit_price": 499.00 }
+    ],
+    "subtotal": 2398.00,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 0.00,
+      "carrier": "DHL",
+      "tracking_number": "DHL-5LUM0001250",
+      "shipped_at": "2026-10-03",
+      "promised_delivery": "2026-10-08",
+      "delivered_at": "2026-10-07"
+    },
+    "total": 2398.00,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "126",
+    "customer_id": "CUST-002",
+    "status": "SHIPPED",
+    "placed_at": "2026-10-14",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-PLG-03", "name": "Lumora Smart Plug 3-pack", "quantity": 1, "unit_price": 29.99 }
+    ],
+    "subtotal": 29.99,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 4.90,
+      "carrier": "DHL",
+      "tracking_number": "DHL-5LUM0001260",
+      "shipped_at": "2026-10-15",
+      "promised_delivery": "2026-10-20",
+      "estimated_delivery": "2026-10-20"
+    },
+    "total": 34.89,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "127",
+    "customer_id": "CUST-003",
+    "status": "DELAYED",
+    "placed_at": "2026-10-03",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-THM-02", "name": "Lumora Thermo Smart Thermostat", "quantity": 1, "unit_price": 129.00 },
+      { "sku": "LUM-SPK-02", "name": "Lumora Echo Speaker Mini", "quantity": 2, "unit_price": 39.00 }
+    ],
+    "subtotal": 207.00,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 0.00,
+      "carrier": "Royal Mail",
+      "tracking_number": "RM-GB0001270",
+      "shipped_at": "2026-10-04",
+      "promised_delivery": "2026-10-09",
+      "estimated_delivery": "2026-10-22"
+    },
+    "delay": {
+      "reason": "CUSTOMS_HOLD",
+      "note": "Parcel is held at UK customs awaiting clearance."
+    },
+    "total": 207.00,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "128",
+    "customer_id": "CUST-003",
+    "status": "PROCESSING",
+    "placed_at": "2026-10-16",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-SPK-02", "name": "Lumora Echo Speaker Mini", "quantity": 1, "unit_price": 39.00 }
+    ],
+    "subtotal": 39.00,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 4.90
+    },
+    "total": 43.90,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "129",
+    "customer_id": "CUST-001",
+    "status": "CANCELLED",
+    "placed_at": "2026-10-01",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-BLB-04", "name": "Lumora Glow Bulb 4-pack", "quantity": 1, "unit_price": 34.99 }
+    ],
+    "subtotal": 34.99,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 4.90
+    },
+    "cancelled_at": "2026-10-01",
+    "total": 39.89,
+    "refunds": [],
+    "refunded_total": 0.00
+  },
+  {
+    "order_id": "130",
+    "customer_id": "CUST-002",
+    "status": "PARTIALLY_REFUNDED",
+    "placed_at": "2026-09-10",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-DBL-01", "name": "Lumora Doorbell Cam", "quantity": 1, "unit_price": 149.00 },
+      { "sku": "LUM-PLG-03", "name": "Lumora Smart Plug 3-pack", "quantity": 2, "unit_price": 29.99 }
+    ],
+    "subtotal": 208.98,
+    "shipping": {
+      "method": "STANDARD",
+      "fee": 0.00,
+      "carrier": "DHL",
+      "tracking_number": "DHL-5LUM0001300",
+      "shipped_at": "2026-09-11",
+      "promised_delivery": "2026-09-16",
+      "delivered_at": "2026-09-14"
+    },
+    "total": 208.98,
+    "refunds": [
+      {
+        "refund_id": "REF-0001",
+        "idempotency_key": "seed-op-001",
+        "amount": 149.00,
+        "reason": "Faulty item: doorbell camera does not power on.",
+        "created_at": "2026-09-20"
+      }
+    ],
+    "refunded_total": 149.00
+  }
+]
