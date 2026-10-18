@@ -225,21 +225,21 @@
       "policies": [
         {
           "name": "PermitCompanyInfo",
-          "statement": "permit (principal, action == AgentCore::Action::\"company-info___get_company_policy\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\");",
+          "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::715075932719:assumed-role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht\", action == AgentCore::Action::\"company-info___get_company_policy\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\");",
           "validationMode": "IGNORE_ALL_FINDINGS",
           "enforcementMode": "ACTIVE",
           "authorizationPhase": "INITIATE"
         },
         {
           "name": "PermitOrderReads",
-          "statement": "permit (principal, action in [AgentCore::Action::\"orders___get_orders\",AgentCore::Action::\"orders___get_customer_info\"], resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\");",
+          "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::715075932719:assumed-role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht\", action in [AgentCore::Action::\"orders___get_orders\",AgentCore::Action::\"orders___get_customer_info\"], resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\");",
           "validationMode": "IGNORE_ALL_FINDINGS",
           "enforcementMode": "ACTIVE",
           "authorizationPhase": "INITIATE"
         },
         {
           "name": "PermitRefundUpToLimit",
-          "statement": "permit (principal, action == AgentCore::Action::\"refunds___refund_customer\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\")\nwhen {\n    context.input.amount.lessThanOrEqual(decimal(\"1000.0\"))\n};",
+          "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::715075932719:assumed-role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht\", action == AgentCore::Action::\"refunds___refund_customer\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\")\nwhen {\n    context.input.amount.lessThanOrEqual(decimal(\"1000.0\"))\n};",
           "validationMode": "FAIL_ON_ANY_FINDINGS",
           "enforcementMode": "ACTIVE",
           "authorizationPhase": "INITIATE"

@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Delivers AgentCore Gateway logs (including Cedar policy decisions) to CloudWatch Logs and
+  Gateway traces to X-Ray. The AgentCore CLI creates the Gateway but not its log delivery.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: CustomerSupport
+  GatewayArn:
+    Type: String
+    Description: support-gateway ARN (agentcore/.cli/deployed-state.json → gatewayArn)
+
+Resources:
+  GatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/bedrock-agentcore/${ProjectName}-gateway
+      RetentionInDays: 30
+
+  # Logs: Gateway → CloudWatch Logs. Source = what emits, destination = where to, delivery = the link.
+  LogsSource:
+    Type: AWS::Logs::DeliverySource
+    Properties:
+      Name: !Sub ${ProjectName}-gateway-logs
+      ResourceArn: !Ref GatewayArn
+      LogType: APPLICATION_LOGS
+  LogsDestination:
+    Type: AWS::Logs::DeliveryDestination
+    Properties:
+      Name: !Sub ${ProjectName}-gateway-logs
+      DestinationResourceArn: !GetAtt GatewayLogGroup.Arn
+  LogsDelivery:
+    Type: AWS::Logs::Delivery
+    Properties:
+      DeliverySourceName: !Ref LogsSource
+      DeliveryDestinationArn: !GetAtt LogsDestination.Arn
+
+  # Traces: Gateway → X-Ray, so Gateway spans appear in the same traces as the agent runtime.
+  TracesSource:
+    Type: AWS::Logs::DeliverySource
+    Properties:
+      Name: !Sub ${ProjectName}-gateway-traces
+      ResourceArn: !Ref GatewayArn
+      LogType: TRACES
+  TracesDestination:
+    Type: AWS::Logs::DeliveryDestination
+    Properties:
+      Name: !Sub ${ProjectName}-gateway-traces
+      DeliveryDestinationType: XRAY
+  TracesDelivery:
+    Type: AWS::Logs::Delivery
+    Properties:
+      DeliverySourceName: !Ref TracesSource
+      DeliveryDestinationArn: !GetAtt TracesDestination.Arn
+
+Outputs:
+  GatewayLogGroupName:
+    Value: !Ref GatewayLogGroup

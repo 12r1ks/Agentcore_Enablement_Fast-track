@@ -1,4 +1,4 @@
-"""DynamoDB access for the order and refund tools. Table names match db/infra/data.yaml."""
+"""DynamoDB access for the order and refund tools. Table names match infra/data.yaml."""
 
 from functools import lru_cache
 

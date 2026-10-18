@@ -21,6 +21,15 @@ def load(name: str) -> list[dict]:
     return json.loads((SEED_DIR / name).read_text(encoding="utf-8"), parse_float=Decimal)
 
 
+def refunds_from(orders: list[dict]) -> list[dict]:
+    """The refunds ledger rows for the refunds already recorded on the seed orders."""
+    return [
+        {**refund, "order_id": order["order_id"], "currency": order["currency"]}
+        for order in orders
+        for refund in order["refunds"]
+    ]
+
+
 def replace_all(table, key: str, items: list[dict]) -> None:
     scan = {"ProjectionExpression": "#k", "ExpressionAttributeNames": {"#k": key}}
     existing = []
@@ -40,17 +49,13 @@ def replace_all(table, key: str, items: list[dict]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--region", default="eu-central-1")
-    parser.add_argument("--project", default="CustomerSupport", help="Table name prefix (ProjectName in db/infra/data.yaml)")
+    parser.add_argument("--project", default="CustomerSupport", help="Table name prefix (ProjectName in infra/data.yaml)")
     args = parser.parse_args()
 
     dynamodb = boto3.resource("dynamodb", region_name=args.region)
     orders = load("orders.json")
     customers = load("customers.json")
-    refunds = [
-        {**refund, "order_id": order["order_id"], "currency": order["currency"]}
-        for order in orders
-        for refund in order["refunds"]
-    ]
+    refunds = refunds_from(orders)
 
     replace_all(dynamodb.Table(f"{args.project}-orders"), "order_id", orders)
     replace_all(dynamodb.Table(f"{args.project}-customers"), "customer_id", customers)

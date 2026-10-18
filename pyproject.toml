@@ -1,0 +1,32 @@
+[project]
+name = "customer-support"
+version = "0.1.0"
+description = "Test environment for the Lumora customer support agent, its tools and seed script"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+# The agent's (app/SupportAgent) and tools' (tools/) dependencies, so one environment runs every test.
+dev = [
+    "aws-bedrock-token-generator>=1.1.0",
+    "bedrock-agentcore[strands-agents]>=1.18.1",
+    "boto3>=1.43.114",
+    "mcp>=1.28.1,<2.0.0",
+    "pytest>=8.0",
+    "strands-agents[openai]>=1.15.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Code is imported the way it is deployed: each folder is its own root.
+pythonpath = ["tools", "app/SupportAgent", "db"]
+addopts = "--import-mode=importlib"
+# Deprecations inside third-party libraries; warnings from this project's code still show.
+filterwarnings = [
+    "ignore::DeprecationWarning:bedrock_agentcore.*",
+    "ignore::DeprecationWarning:strands.*",
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+]
