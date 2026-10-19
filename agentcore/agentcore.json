@@ -154,7 +154,7 @@
           "toolDefinitions": [
             {
               "name": "refund_customer",
-              "description": "Refund part or all of one of the current customer's orders to their original payment method. The customer is identified automatically from the session, so never pass a customer ID; orders of other customers are reported as not found. Check the order with get_order first. Cancelled orders cannot be refunded, because cancelling already refunded them; refunding a delayed order in full cancels it. Refunds over 1000 EUR, alone or in total on one order, are not allowed and need a human support manager. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
+              "description": "Refund part or all of one of the current customer's orders to their original payment method. The customer is identified automatically from the session, so never pass a customer ID; orders of other customers are reported as not found. Check the order with get_order first. Cancelled orders cannot be refunded, because cancelling already refunded them; refunding a delayed order in full cancels it. Refunds above the approval limit are refused; then tell the customer a human support manager will need to review the request. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
               "inputSchema": {
                 "type": "object",
                 "properties": {

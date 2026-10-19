@@ -132,6 +132,30 @@ Traceback (most recent call last):
 Gateway as a function error. Same span pattern as the timeout, but failing after 0.2 s instead of 10 s: a fast
 failure points to a crash, a 10 s failure to a timeout. The stack trace in the Lambda log names the line.
 
+## Wrong tool selection
+
+Prompt: "i want to cancel order 124". Session `0903f29f-267c-4aff-980d-900961d10b7e`,
+trace `6ad68c112a81352678773bfb6ea9e832`. There is no cancel tool, and the closest-looking one is
+`refund_customer`, so this tests whether the model picks a wrong tool for an action it can't perform.
+
+| Start | Span | ms | Status |
+| --- | --- | --- | --- |
+| 21:31:04.448 | `Bedrock AgentCore.ListMemoryRecords` (preferences loaded) | 176 | |
+| 21:31:05.478 | `chat` (model picks `get_order`) | 1005 | OK |
+| 21:31:06.568 | `execute_tool orders___get_order` | 1513 | OK |
+| 21:31:08.250 | `chat` (answer) | 503 | OK |
+
+Agent reply, from the trace's telemetry:
+
+> I'm sorry, Ms. Emma de Vries, but I cannot cancel order 124 because it has already been delivered and
+> partially refunded. If there is something more I can help you with regarding this order, please let me know!
+
+**Result:** correct selection. The model checked the order before answering and did not call `refund_customer`
+as a substitute for cancelling. The trace is where a wrong pick would show: an `execute_tool
+refunds___refund_customer` span, with the refund's arguments in the span, after a request that never asked for
+a refund. A smaller gap is visible too: no `get_company_policy` span, so the agent didn't point the customer to
+the returns process that the policy prescribes for delivered orders.
+
 ## How the failures differ in the telemetry
 
 | Failure | Failing span | Duration | Where the root cause is |
@@ -140,6 +164,7 @@ failure points to a crash, a 10 s failure to a timeout. The stack trace in the L
 | HTTP 500 | `InvokeTool.orders___get_order` ERROR | 212 ms | Lambda `[ERROR] RuntimeError` with stack trace |
 | Invalid parameters | none; the tool answered normally | 165 ms | Lambda `tool_call` line, `outcome: INVALID_PARAMETER` |
 | LLM loop | `execute_tool` ERROR, no Gateway span | 1 ms | Agent log `Tool limit of 10 reached`; span status message |
+| Wrong tool selection | none; check which `execute_tool` spans follow the request | | The tool names and arguments in the agent's spans |
 
 In every case the agent answered the customer without crashing, and Cedar allowed the call, so authorization
 was never the cause.

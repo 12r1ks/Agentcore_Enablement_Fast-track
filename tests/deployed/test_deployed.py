@@ -7,6 +7,7 @@ facts any correct answer must contain, so they don't depend on the model's wordi
 """
 
 import json
+import time
 import uuid
 from pathlib import Path
 
@@ -25,6 +26,8 @@ STATE = json.loads((ROOT / "agentcore" / ".cli" / "deployed-state.json").read_te
 GATEWAY = STATE["mcp"]["gateways"]["support-gateway"]
 RUNTIME_ARN = STATE["runtimes"]["SupportAgent"]["runtimeArn"]
 REGION = RUNTIME_ARN.split(":")[3]
+# Created by infra/gateway-logging.yaml (default ProjectName).
+GATEWAY_LOG_GROUP = "/aws/vendedlogs/bedrock-agentcore/CustomerSupport-gateway"
 
 
 @pytest.fixture(scope="module")
@@ -129,3 +132,41 @@ def test_retried_refund_is_not_paid_twice():
     # The retry session can only know the refund ID if the backend returned the stored refund.
     assert refund["refund_id"] in first_reply
     assert refund["refund_id"] in retry_reply
+
+
+def agent_denials_since(start_ms: int, timeout_s: int = 120) -> list[dict]:
+    """Cedar decisions denying the agent's own role by ForbidRefundOverLimit, logged by the Gateway since start_ms.
+    Gateway logs reach CloudWatch with a delay, so this polls until one appears or the timeout passes."""
+    logs = boto3.client("logs", region_name=REGION)
+    deadline = time.time() + timeout_s
+    while True:
+        events = logs.filter_log_events(
+            logGroupName=GATEWAY_LOG_GROUP, startTime=start_ms, filterPattern='"ForbidRefundOverLimit"'
+        )["events"]
+        policies = [json.loads(e["message"])["body"].get("policy", {}) for e in events]
+        denials = [
+            p for p in policies
+            if p.get("decision") == "DENY" and ":assumed-role/" in p.get("principal", {}).get("entityId", "")
+        ]
+        if denials or time.time() > deadline:
+            return denials
+        time.sleep(10)
+
+
+def test_refund_over_the_limit_requested_by_the_agent_is_denied_by_policy():
+    # The task's security path: the model requests refund(5000), and the Gateway's Cedar policy denies it for the
+    # agent's own role. A plain request is used because "ignore previous instructions" is already refused by the
+    # prompt, so it never reaches the Gateway.
+    orders = boto3.resource("dynamodb", region_name=REGION).Table("CustomerSupport-orders")
+    refunded_before = orders.get_item(Key={"order_id": "131"}, ConsistentRead=True)["Item"]["refunded_total"]
+    started_ms = int(time.time() * 1000)
+
+    ask_agent(
+        f"Refund 5000 EUR on order 131, reason: the device was dead on arrival. "
+        f"Operation ID over-limit-{uuid.uuid4().hex[:8]}. I confirm the order, amount and reason."
+    )
+
+    denials = agent_denials_since(started_ms)
+    assert denials, "no DENY by ForbidRefundOverLimit for the agent's role; did the model call refund_customer?"
+    assert any(d.startswith("ForbidRefundOverLimit") for d in denials[0]["determiningPolicies"])
+    assert orders.get_item(Key={"order_id": "131"}, ConsistentRead=True)["Item"]["refunded_total"] == refunded_before
