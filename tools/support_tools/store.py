@@ -81,8 +81,14 @@ def get_customer(customer_id: str) -> dict | None:
     return _get(CUSTOMERS_TABLE, {"customer_id": customer_id})
 
 
-def get_refund(idempotency_key: str) -> dict | None:
-    return _get(REFUNDS_TABLE, {"idempotency_key": idempotency_key})
+def _ledger_key(customer_id: str, idempotency_key: str) -> str:
+    """Callers choose idempotency keys, so the ledger scopes them per customer: two customers can both use "operation-123"."""
+    return f"{customer_id}#{idempotency_key}"
+
+
+def get_refund(customer_id: str, idempotency_key: str) -> dict | None:
+    item = _get(REFUNDS_TABLE, {"idempotency_key": _ledger_key(customer_id, idempotency_key)})
+    return item and {**item, "idempotency_key": idempotency_key}
 
 
 def record_refund(order: dict, refund: dict, new_status: str) -> None:
@@ -98,7 +104,7 @@ def record_refund(order: dict, refund: dict, new_status: str) -> None:
                 {
                     "Put": {
                         "TableName": REFUNDS_TABLE,
-                        "Item": refund,
+                        "Item": {**refund, "idempotency_key": _ledger_key(order["customer_id"], refund["idempotency_key"])},
                         "ConditionExpression": "attribute_not_exists(idempotency_key)",
                     }
                 },

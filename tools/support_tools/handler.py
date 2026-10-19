@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from decimal import Decimal
 
 from .company_info import get_company_policy
@@ -24,6 +25,23 @@ TOOLS = {
 }
 
 
+# Demo only: order IDs that make any tool fail on purpose, so the failure scenarios can be traced.
+# No real order uses them. 901 outlives the 10 s Lambda timeout; 902 crashes the Lambda.
+TIMEOUT_ORDER_ID = "901"
+CRASH_ORDER_ID = "902"
+_TIMEOUT_SLEEP_SECONDS = 15
+
+
+def _simulate_failure(args: dict) -> None:
+    order_id = args.get("order_id")
+    if order_id == TIMEOUT_ORDER_ID:
+        logger.warning(json.dumps({"event": "simulated_failure", "kind": "timeout"}))
+        time.sleep(_TIMEOUT_SLEEP_SECONDS)
+    elif order_id == CRASH_ORDER_ID:
+        logger.warning(json.dumps({"event": "simulated_failure", "kind": "crash"}))
+        raise RuntimeError("Simulated backend crash")
+
+
 def _tool_name(context) -> str:
     custom = getattr(getattr(context, "client_context", None), "custom", None) or {}
     return custom.get(_TOOL_NAME_KEY, "").split(_TARGET_DELIMITER, 1)[-1]
@@ -43,6 +61,7 @@ def _json_safe(value):
 def lambda_handler(event, context) -> dict:
     name = _tool_name(context)
     args = event if isinstance(event, dict) else {}
+    _simulate_failure(args)
     try:
         tool = TOOLS.get(name)
         if tool is None:

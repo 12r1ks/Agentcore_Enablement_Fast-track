@@ -37,6 +37,9 @@ class FakeAgentCache:
 
 @pytest.fixture
 def use_agent(monkeypatch):
+    # load_model signs a token with local AWS credentials; tests must not need them.
+    monkeypatch.setattr(main, "load_model", lambda: "fresh-model")
+
     def install(agent):
         cache = FakeAgentCache(agent)
         monkeypatch.setattr(main, "agents", cache)
@@ -55,6 +58,13 @@ def test_prompt_is_streamed_back_from_the_agent(use_agent):
     use_agent(agent)
     assert invoke({"prompt": "Where is my order?"}) == [TEXT_EVENT]
     assert agent.prompts == ["Where is my order?"]
+
+
+def test_each_turn_gets_a_fresh_model(use_agent):
+    agent = FakeAgent(events=[TEXT_EVENT])
+    use_agent(agent)
+    invoke({"prompt": "hi"})
+    assert agent.model == "fresh-model"
 
 
 def test_only_model_stream_events_are_forwarded(use_agent):

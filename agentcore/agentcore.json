@@ -121,8 +121,8 @@
                     "dynamodb:GetItem"
                   ],
                   "Resource": [
-                    "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-orders",
-                    "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-customers"
+                    "arn:aws:dynamodb:*:*:table/CustomerSupport-orders",
+                    "arn:aws:dynamodb:*:*:table/CustomerSupport-customers"
                   ]
                 },
                 {
@@ -131,7 +131,7 @@
                   "Action": [
                     "dynamodb:Query"
                   ],
-                  "Resource": "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-orders/index/customer_id-index"
+                  "Resource": "arn:aws:dynamodb:*:*:table/CustomerSupport-orders/index/customer_id-index"
                 }
               ]
             }
@@ -143,7 +143,7 @@
           "toolDefinitions": [
             {
               "name": "refund_customer",
-              "description": "Refund part or all of one of the current customer's orders to their original payment method. The customer is identified automatically from the session, so never pass a customer ID; orders of other customers are reported as not found. Check the order with get_orders first. Refunds over 1000 EUR are not allowed and need a human support manager. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
+              "description": "Refund part or all of one of the current customer's orders to their original payment method. The customer is identified automatically from the session, so never pass a customer ID; orders of other customers are reported as not found. Check the order with get_orders first. Cancelled orders cannot be refunded, because cancelling already refunded them; refunding a delayed order in full cancels it. Refunds over 1000 EUR, alone or in total on one order, are not allowed and need a human support manager. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
               "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -193,7 +193,7 @@
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem"
                   ],
-                  "Resource": "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-orders"
+                  "Resource": "arn:aws:dynamodb:*:*:table/CustomerSupport-orders"
                 },
                 {
                   "Sid": "ReadAndWriteRefundLedger",
@@ -202,7 +202,7 @@
                     "dynamodb:GetItem",
                     "dynamodb:PutItem"
                   ],
-                  "Resource": "arn:aws:dynamodb:eu-central-1:715075932719:table/CustomerSupport-refunds"
+                  "Resource": "arn:aws:dynamodb:*:*:table/CustomerSupport-refunds"
                 }
               ]
             }
@@ -214,7 +214,7 @@
       "exceptionLevel": "NONE",
       "policyEngineConfiguration": {
         "policyEngineName": "SupportPolicies",
-        "mode": "LOG_ONLY"
+        "mode": "ENFORCE"
       }
     }
   ],

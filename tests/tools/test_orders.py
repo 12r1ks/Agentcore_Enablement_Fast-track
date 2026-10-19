@@ -16,7 +16,7 @@ def error_code(tool, args) -> str:
 @pytest.mark.parametrize("args", [CALLER, {**CALLER, "order_id": ""}])
 def test_without_order_id_lists_own_orders_newest_first(db, args):
     orders = get_orders(args)["orders"]
-    assert [o["order_id"] for o in orders] == ["123", "124"]
+    assert [o["order_id"] for o in orders] == ["123", "129", "124"]
     assert orders[0] == {
         "order_id": "123",
         "status": "DELAYED",

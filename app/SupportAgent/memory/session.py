@@ -1,8 +1,7 @@
 import json
-import os
 import logging
+import os
 from functools import cache
-from typing import Optional
 
 import boto3
 from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig
@@ -57,7 +56,7 @@ def load_preferences(actor_id: str) -> list[str]:
     return [_preference_text(record) for record in records[:MAX_PREFERENCES]]
 
 
-def get_memory_session_manager(session_id: str, actor_id: str) -> Optional[AgentCoreMemorySessionManager]:
+def get_memory_session_manager(session_id: str, actor_id: str) -> AgentCoreMemorySessionManager | None:
     """Short-term memory: the session's messages are stored as events and restored on a new Agent.
     AgentCore extracts long-term preferences from these events in the background (see load_preferences).
     Memory is optional: if it can't be reached, the agent runs without it instead of failing."""

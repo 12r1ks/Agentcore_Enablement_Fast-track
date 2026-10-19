@@ -1,14 +1,11 @@
 import os
-import logging
+
 import botocore.session
 import httpx
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from mcp.client.streamable_http import streamablehttp_client
 from strands.tools.mcp.mcp_client import MCPClient
-
-logger = logging.getLogger(__name__)
-
 
 GATEWAY_URL = os.environ.get("AGENTCORE_GATEWAY_SUPPORT_GATEWAY_URL")
 if not GATEWAY_URL:

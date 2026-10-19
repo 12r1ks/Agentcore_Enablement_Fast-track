@@ -194,5 +194,28 @@
       }
     ],
     "refunded_total": 149.00
+  },
+  {
+    "order_id": "131",
+    "customer_id": "CUST-001",
+    "status": "DELIVERED",
+    "placed_at": "2026-09-12",
+    "currency": "EUR",
+    "items": [
+      { "sku": "LUM-GIGA-X1", "name": "Lumora Exclusive Giga Home Command Center", "quantity": 1, "unit_price": 5999.00 }
+    ],
+    "subtotal": 5999.00,
+    "shipping": {
+      "method": "EXPRESS",
+      "fee": 0.00,
+      "carrier": "PostNL",
+      "tracking_number": "PN-3SLUM0001310",
+      "shipped_at": "2026-09-13",
+      "promised_delivery": "2026-09-15",
+      "delivered_at": "2026-09-15"
+    },
+    "total": 5999.00,
+    "refunds": [],
+    "refunded_total": 0.00
   }
 ]

@@ -5,8 +5,8 @@ from decimal import Decimal
 from . import store
 from .errors import ToolError, caller_customer_id, invalid_parameter, required_string
 
-# Matches the Refund Policy in lumora-company-info.md. The Gateway's Cedar policy enforces the
-# same limit before this code runs; checking here too keeps the backend safe on its own.
+# Matches the Refund Policy in lumora-company-info.md. The Gateway's Cedar policy enforces it per
+# refund before this code runs; this code also enforces it per order, which Cedar can't (it doesn't see past refunds).
 AUTO_APPROVAL_LIMIT = Decimal("1000")
 
 
@@ -33,6 +33,13 @@ def _replay(existing: dict, order_id: str, amount: Decimal) -> dict:
     return {"refund": existing, "duplicate": True}
 
 
+def _status_after_refund(status: str, fully_refunded: bool) -> str:
+    """Refunding a delayed order in full cancels it; a partial refund (e.g. the shipping fee) keeps it DELAYED."""
+    if status == "DELAYED":
+        return "CANCELLED" if fully_refunded else "DELAYED"
+    return "REFUNDED" if fully_refunded else "PARTIALLY_REFUNDED"
+
+
 def refund_customer(args: dict) -> dict:
     """Tool: refund part or all of an order. Retrying with the same idempotency_key returns the original refund."""
     customer_id = caller_customer_id(args)
@@ -54,9 +61,25 @@ def refund_customer(args: dict) -> dict:
     if order is None or order["customer_id"] != customer_id:
         raise ToolError("ORDER_NOT_FOUND", f"No order with ID '{order_id}' for this customer.", details={"order_id": order_id})
 
-    existing = store.get_refund(idempotency_key)
+    existing = store.get_refund(customer_id, idempotency_key)
     if existing is not None:
         return _replay(existing, order_id, amount)
+
+    # Checked after the replay, so retrying the refund that cancelled a delayed order still returns it.
+    if order["status"] == "CANCELLED":
+        raise ToolError(
+            "ORDER_CANCELLED",
+            "This order was cancelled, and cancelling already refunded its payment automatically.",
+            details={"order_id": order_id},
+        )
+
+    # The limit counts all refunds on the order, so splitting a large refund into smaller ones can't get around it.
+    if order["refunded_total"] + amount > AUTO_APPROVAL_LIMIT:
+        raise ToolError(
+            "REFUND_REQUIRES_APPROVAL",
+            f"Refunds over {AUTO_APPROVAL_LIMIT} EUR in total on one order need review by a human support manager.",
+            details={"limit": AUTO_APPROVAL_LIMIT, "already_refunded": order["refunded_total"]},
+        )
 
     remaining = order["total"] - order["refunded_total"]
     if amount > remaining:
@@ -75,12 +98,12 @@ def refund_customer(args: dict) -> dict:
         "reason": reason,
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
-    new_status = "REFUNDED" if amount == remaining else "PARTIALLY_REFUNDED"
+    new_status = _status_after_refund(order["status"], fully_refunded=amount == remaining)
     try:
         store.record_refund(order, refund, new_status)
     except store.RefundAlreadyRecorded:
         # A concurrent retry with the same key won the race; return its result.
-        return _replay(store.get_refund(idempotency_key), order_id, amount)
+        return _replay(store.get_refund(customer_id, idempotency_key), order_id, amount)
     except store.OrderChanged:
         raise ToolError("ORDER_CHANGED", "The order was updated by another request. Retry the refund.", retryable=True) from None
     return {"refund": refund, "duplicate": False, "order_status": new_status}

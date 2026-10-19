@@ -25,7 +25,7 @@ Every order has exactly one status:
 | SHIPPED | Handed to the carrier. A tracking number is available. |
 | DELAYED | The order is later than the promised delivery date. The delay reason is recorded on the order. |
 | DELIVERED | The carrier confirmed delivery. |
-| CANCELLED | The order was cancelled before shipping. |
+| CANCELLED | The order was cancelled. Its payment is refunded automatically. |
 | REFUNDED | The full order amount was returned to the customer. |
 | PARTIALLY_REFUNDED | Part of the order amount was returned to the customer. |
 
@@ -62,10 +62,12 @@ For a delayed order, support can explain the reason and expected new delivery da
 - Refunds go back to the original payment method.
 - The refund is issued within 5 business days after the returned item is received and checked. Bank processing can add another 3 to 5 business days.
 - **Refund authorization limits:**
-  - Refunds of **1,000 EUR or less** can be approved by the AI support agent.
-  - Refunds **over 1,000 EUR** are never approved automatically. They need review by a human support manager.
+  - Refunds of **1,000 EUR or less** can be approved by the AI support agent, up to 1,000 EUR in total per order.
+  - Refunds **over 1,000 EUR**, alone or together with earlier refunds on the same order, are never approved automatically. They need review by a human support manager.
 - Each refund request has a unique operation ID. Repeating a request with the same operation ID does not create a second refund.
 - A refund can never be larger than the amount paid for the order, minus any amount already refunded.
+- Cancelled orders cannot be refunded again: cancelling an order refunds its payment automatically.
+- A delayed order can be refunded in full, which cancels the order, or in part (for example the shipping fee), which keeps it on its way.
 - Shipping fees are refunded only if the item was faulty, the order was more than 7 days late, or Lumora made an error.
 
 ## Warranty

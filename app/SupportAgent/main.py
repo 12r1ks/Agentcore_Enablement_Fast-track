@@ -1,21 +1,19 @@
-from typing import Any
 from collections import OrderedDict
-from strands import Agent, tool
-import asyncio
+from typing import Any
+
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.types.exceptions import ConcurrencyException
-from bedrock_agentcore.runtime import BedrockAgentCoreApp
-from model.load import load_model
-from mcp_client.client import get_streamable_http_mcp_client
+
 from hooks.customer_context import CustomerContextHook
 from hooks.loop_guard import LoopGuardHook
+from mcp_client.client import get_streamable_http_mcp_client
 from memory.session import get_memory_session_manager, load_preferences
+from model.load import load_model
 
 app = BedrockAgentCoreApp()
 log = app.logger
-
-# Define a Streamable HTTP MCP Client
-mcp_clients = [get_streamable_http_mcp_client()]
 
 # Stands in for the authenticated user (in production: taken from a verified JWT).
 # Matches a customer_id in the customers table. Kept in agent state, never shown to the model.
@@ -25,7 +23,6 @@ DEFAULT_SYSTEM_PROMPT = """
 You are Lumora's customer support assistant. You help the signed-in customer with their
 orders, refunds and account, and answer questions about Lumora. Base answers on tool
 results; never guess order details or policies. Get user info from the tool.
-Current user's id always saved in the sate
 
 Refunds:
 - Confirm the order, amount and reason with the customer before calling refund_customer.
@@ -45,6 +42,7 @@ Be friendly and concise, and reply in the customer's language.
 
 
 def _system_prompt(preferences: list[str]) -> str:
+    """The system prompt is the same for every turn, with preferences read once per session."""
     if not preferences:
         return DEFAULT_SYSTEM_PROMPT
     listed = "\n".join(f"- {preference}" for preference in preferences)
@@ -56,29 +54,18 @@ def _system_prompt(preferences: list[str]) -> str:
     )
 
 
-# Define a collection of tools used by the model
-tools = []
+# Gateway tools, reached over MCP
+tools = [get_streamable_http_mcp_client()]
 
-_INLINE_FUNCTION_NAMES = set()
-
-
-# Add MCP client to tools if available
-for mcp_client in mcp_clients:
-    if mcp_client:
-        tools.append(mcp_client)
-
-
-def _make_conversation_manager():
-    return SlidingWindowConversationManager(40)
 
 def _create_agent(session_id: str) -> Agent:
-    """Based on scaffolded code from strands.agent.agent_cache.AgentCache, but simplified."""
+    """A new Agent for one session, with that customer's preferences, identity and Memory."""
     return Agent(
         model=load_model(),
         # Long-term preferences are read once per session; actor_id is the customer, so they follow them across sessions.
         system_prompt=_system_prompt(load_preferences(actor_id=DEMO_CUSTOMER_ID)),
         tools=tools,
-        conversation_manager=_make_conversation_manager(),
+        conversation_manager=SlidingWindowConversationManager(40),
         session_manager=get_memory_session_manager(session_id, actor_id=DEMO_CUSTOMER_ID),
         state={"customer_id": DEMO_CUSTOMER_ID},
         hooks=[CustomerContextHook(), LoopGuardHook()],
@@ -87,8 +74,8 @@ def _create_agent(session_id: str) -> Agent:
 
 class AgentCache:
     """One Agent per session_id, so a session's turns reuse its Agent instead of reloading
-    history from Memory each time. Bounded with LRU eviction so the process can't grow without limit. 
-    Rewritten from the CLI-scaffolded agent cache"""
+    history from Memory each time. Bounded with LRU eviction so the process can't grow without limit.
+    Rewritten from the CLI-scaffolded agent cache."""
 
     def __init__(self, max_size: int = 128):
         self._agents: OrderedDict[str, Agent] = OrderedDict()
@@ -113,7 +100,7 @@ agents = AgentCache()
 
 
 def strip_trailing_tool_use(messages: Any) -> list[dict]:
-    """Strip toolUse blocks from the tail until the last message has none.  
+    """Strip toolUse blocks from the tail until the last message has none.
     From the scaffolded code."""
     if not isinstance(messages, list):
         raise ValueError("messages must be a list")
@@ -139,9 +126,8 @@ def strip_trailing_tool_use(messages: Any) -> list[dict]:
 
 
 def _extract_prompt(payload: dict):
-    """Accept validated harness messages, tool results, or a plain prompt string.
-    Messages and tool_results are supported for CLI compatibility; this agent uses prompt
-    From the initial scaffolded code, but simplified to only support prompt strings and messages."""
+    """Accept a plain prompt string, a message history, or tool results; raise ValueError otherwise.
+    This agent is called with a prompt; messages and tool_results are kept from the CLI scaffold for compatibility."""
     if not isinstance(payload, dict):
         raise ValueError("payload must be a JSON object")
     if "messages" in payload:
@@ -165,7 +151,7 @@ def _extract_prompt(payload: dict):
 
 
 def _error(code: str, message: str) -> dict:
-    """For the error's formating"""
+    """Error response for the Bedrock AgentCore App. From the scaffolded code."""
     return {"error": {"code": code, "message": message}}
 
 
@@ -183,9 +169,9 @@ async def invoke(payload, context):
 
     try:
         agent = agents.get(session_id)
-        async for event in agent.stream_async(
-            prompt,
-        ):
+        # Fresh short-lived token each turn, so the session can last longer than the token's lifetime.
+        agent.model = load_model()
+        async for event in agent.stream_async(prompt):
             if not isinstance(event, dict) or "event" not in event:
                 continue
             cbs = event["event"].get("contentBlockStart")
@@ -195,7 +181,6 @@ async def invoke(payload, context):
     except ConcurrencyException:
         yield _error("SESSION_BUSY", "Still working on your previous message, please wait.")
     except Exception:
-        # Our fault: full stack trace in logs and traces, generic message to the customer.
         log.exception("Invocation failed", extra={"session_id": session_id})
         agents.evict(session_id)
         yield _error("INTERNAL_ERROR", "Sorry, something went wrong. Please try again.")

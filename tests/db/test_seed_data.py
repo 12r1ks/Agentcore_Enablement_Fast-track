@@ -37,14 +37,22 @@ def test_refund_ledger_rows_point_back_to_their_order(orders):
     for row in ledger:
         order = next(o for o in orders if o["order_id"] == row["order_id"])
         assert row["currency"] == order["currency"]
+        assert row["idempotency_key"].startswith(f"{order['customer_id']}#")
 
 
 class FakeTable:
-    """Just enough of a boto3 Table for replace_all: paginated scan and a batch writer."""
+    """Just enough of a boto3 Table for replace_all: paginated scan and a batch writer that,
+    like DynamoDB, rejects a batch touching the same key twice."""
 
     def __init__(self, keys, page_size=2):
         self.items = {key: {"order_id": key} for key in keys}
         self.page_size = page_size
+        self.batch_keys = set()
+
+    def _touch(self, key):
+        if key in self.batch_keys:
+            raise ValueError("Provided list of item keys contains duplicates")
+        self.batch_keys.add(key)
 
     def scan(self, ExclusiveStartKey=None, **_):
         keys = sorted(self.items)
@@ -59,15 +67,18 @@ class FakeTable:
         return self
 
     def __enter__(self):
+        self.batch_keys = set()
         return self
 
     def __exit__(self, *_):
         pass
 
     def delete_item(self, Key):
+        self._touch(Key["order_id"])
         del self.items[Key["order_id"]]
 
     def put_item(self, Item):
+        self._touch(Item["order_id"])
         self.items[Item["order_id"]] = Item
 
 
@@ -75,3 +86,9 @@ def test_replace_all_removes_items_from_every_scan_page():
     table = FakeTable(["old-1", "old-2", "old-3", "old-4", "old-5"])
     replace_all(table, "order_id", [{"order_id": "123"}, {"order_id": "124"}])
     assert sorted(table.items) == ["123", "124"]
+
+
+def test_replace_all_overwrites_items_that_are_seeded_again():
+    table = FakeTable(["123", "old-1"])
+    replace_all(table, "order_id", [{"order_id": "123", "status": "DELAYED"}])
+    assert table.items == {"123": {"order_id": "123", "status": "DELAYED"}}

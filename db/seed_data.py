@@ -22,9 +22,15 @@ def load(name: str) -> list[dict]:
 
 
 def refunds_from(orders: list[dict]) -> list[dict]:
-    """The refunds ledger rows for the refunds already recorded on the seed orders."""
+    """The refunds ledger rows for the refunds already recorded on the seed orders.
+    Ledger keys are scoped per customer, in the same format as store._ledger_key in the tools."""
     return [
-        {**refund, "order_id": order["order_id"], "currency": order["currency"]}
+        {
+            **refund,
+            "idempotency_key": f"{order['customer_id']}#{refund['idempotency_key']}",
+            "order_id": order["order_id"],
+            "currency": order["currency"],
+        }
         for order in orders
         for refund in order["refunds"]
     ]
@@ -39,9 +45,12 @@ def replace_all(table, key: str, items: list[dict]) -> None:
         if "LastEvaluatedKey" not in page:
             break
         scan["ExclusiveStartKey"] = page["LastEvaluatedKey"]
+    # A batch may not touch a key twice, so only items that aren't seeded again are deleted; puts overwrite the rest.
+    seeded = {item[key] for item in items}
     with table.batch_writer() as batch:
         for value in existing:
-            batch.delete_item(Key={key: value})
+            if value not in seeded:
+                batch.delete_item(Key={key: value})
         for item in items:
             batch.put_item(Item=item)
 
