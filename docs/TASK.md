@@ -1,7 +1,5 @@
 # Final Project: Production-Like Customer Support Agent
 
-Starts Oct 15, 2026 · Ends Oct 17, 2026 (2 days)
-
 ## What should be done
 
 Build one production-like Customer Support Agent that combines the main AgentCore concepts from the module.

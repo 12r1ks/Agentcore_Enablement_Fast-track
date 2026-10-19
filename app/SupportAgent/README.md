@@ -10,6 +10,7 @@ The Strands agent that runs on AgentCore Runtime. See the root README for the wh
 | `memory/session.py` | Short-term session events and long-term customer preferences in AgentCore Memory |
 | `hooks/customer_context.py` | Adds the signed-in customer's ID to customer-scoped tool calls |
 | `hooks/loop_guard.py` | Stops a model that keeps calling tools within one turn |
+| `hooks/tool_retry.py` | Retries tool errors marked retryable, with exponential backoff and jitter |
 
 Environment variables set by AgentCore Runtime:
 

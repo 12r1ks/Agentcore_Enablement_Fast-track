@@ -11,36 +11,38 @@ Where the evidence comes from:
 
 ## Invalid parameters
 
-Prompt: "Refund 12.345 EUR on order 124, reason: dent. Operation ID invalid-001. I confirm the order, amount and reason."
-Run twice, in sessions `ea6ee315-ae84-462d-95e0-56215e18f996` and `daf67b5a-3bd2-4c69-bc89-73b1d76807fb`.
-
-| Session | Trace | Failing span | Tool log (Lambda request ID) | Outcome |
-| --- | --- | --- | --- | --- |
-| `ea6ee315…` | `6ad67a9d4b39ed5d3acd33aa44dce2d7` | `execute_tool refunds___refund_customer` at 20:16:39.579 | `2df2bbc3-d2a8-48a2-8738-fcce8308108f` | `INVALID_PARAMETER` |
-| `daf67b5a…` | `6ad67aa137b77e03257a559f2c2138b8` | `execute_tool refunds___refund_customer` at 20:16:43.594 | `fe9bc478-ad6f-4cc6-8ec1-c9e2338b11e3` | `INVALID_PARAMETER` |
-
-Tool log line (refunds Lambda, 20:16:40.110):
-
-```
-{"event": "tool_call", "tool": "refund_customer", "outcome": "INVALID_PARAMETER",
- "argument_names": ["amount", "customer_id", "idempotency_key", "order_id", "reason"]}
-```
-
-Spans of the turn (session `daf67b5a…`):
+Prompt: "Why is my order LUM-2026-10-ORDER-REFERENCE-123-NL-AMSTERDAM-WAREHOUSE-B-PRIORITY-XYZ delayed?"
+(a 69-character order ID; the tools accept at most 64). Session `invalid-params-1792448534-long-order-id-session`,
+trace `6ad69818737d475b4d71a23c337ee8be`, with the current tools.
 
 | Start | Span | ms | Status |
 | --- | --- | --- | --- |
-| 20:16:41.217 | `invoke_agent Strands Agents` | 3662 | OK |
-| 20:16:41.369 | `chat` | 1016 | OK |
-| 20:16:42.466 | `execute_tool orders___get_orders` | 131 | OK |
-| 20:16:42.759 | `chat` | 758 | OK |
-| 20:16:43.594 | `execute_tool refunds___refund_customer` | 165 | OK |
-| 20:16:43.926 | `chat` | 862 | OK |
+| 22:22:24.280 | `invoke_agent Strands Agents` | 2669 | OK |
+| 22:22:24.483 | `chat` (model picks `get_order` with the ID as given) | 1272 | OK |
+| 22:22:25.845 | `execute_tool orders___get_order` | 159 | OK |
+| 22:22:26.174 | `chat` (answer) | 701 | OK |
 
-**Root cause:** the model passed the amount as given, `12.345`. The refund tool accepts at most 2 decimal
-places, so it rejected the call with `INVALID_PARAMETER` (a structured tool error, `retryable: false`) before
-touching any data. The tool span is `OK` because the tool answered normally with an error result; the
-outcome is in the tool log. The agent then explained the problem to the customer instead of retrying.
+Tool log (`/aws/lambda/CustomerSupport-orders`, request `c36c0a33-d6df-44c6-857f-f174409a4e63`, X-Ray trace
+`1-6ad69818-737d475b4d71a23c337ee8be`, the agent's trace ID):
+
+```
+{"event": "tool_call", "tool": "get_order", "outcome": "INVALID_PARAMETER", "argument_names": ["customer_id", "order_id"]}
+```
+
+Agent reply: "I couldn't retrieve the details for that specific order ID because it is too long for my system to
+process. Could you please double-check the order ID and provide it again? Alternatively, I can list your recent
+orders for you to identify it."
+
+**Root cause:** the order ID exceeded the tools' 64-character limit, so `get_order` rejected it with
+`INVALID_PARAMETER` (a structured tool error, `retryable: false`) before reading any data. The tool span is `OK`
+because the tool answered normally with an error result; the outcome is in the tool log, linked to the span by
+the shared trace ID. The agent explained the problem instead of retrying.
+
+Earlier runs with a refund of 12.345 EUR (sessions `ea6ee315…` and `daf67b5a…`, 20:16, with the earlier
+`get_orders` tool) got the same outcome from `refund_customer` (amounts allow at most 2 decimal places;
+refunds Lambda requests `2df2bbc3…` and `fe9bc478…`). Rerun at 22:20 with the current tools, the model rounded
+the amount to 12.35 before calling the tool, so the invalid value never reached the backend; an over-long
+order ID is a value the model passes on unchanged.
 
 ## LLM loop
 
@@ -134,27 +136,41 @@ failure points to a crash, a 10 s failure to a timeout. The stack trace in the L
 
 ## Wrong tool selection
 
-Prompt: "i want to cancel order 124". Session `0903f29f-267c-4aff-980d-900961d10b7e`,
-trace `6ad68c112a81352678773bfb6ea9e832`. There is no cancel tool, and the closest-looking one is
-`refund_customer`, so this tests whether the model picks a wrong tool for an action it can't perform.
+A real wrong pick, caught in production-like conditions. Between the two deploys that split `get_orders` into
+`list_orders` and `get_order`, the Cedar permit `PermitOrderReads` briefly allowed only `get_customer_info`
+(20:42–20:45). Three order questions were asked in that window.
 
-| Start | Span | ms | Status |
-| --- | --- | --- | --- |
-| 21:31:04.448 | `Bedrock AgentCore.ListMemoryRecords` (preferences loaded) | 176 | |
-| 21:31:05.478 | `chat` (model picks `get_order`) | 1005 | OK |
-| 21:31:06.568 | `execute_tool orders___get_order` | 1513 | OK |
-| 21:31:08.250 | `chat` (answer) | 503 | OK |
+| Session | Trace | Question | Tools called | Agent's answer |
+| --- | --- | --- | --- | --- |
+| `743297a7-3d36-4ad4-a025-2612a0055de5` | `6ad680d32cda5efa19eccf3a43724f47` | "Why is my order 901 delayed?" | `get_customer_info` × 10, `get_company_policy` × 1 | Generic delay reasons, without the order |
+| `efac8e75-a8b1-497f-abb5-90c7638b3e75` | `6ad680f3029d18667b80f397499eb7a4` | "What is the status of order 902?" | `get_customer_info` × 11 | "I don't have access to the specific details for order 902 at the moment." |
+| `c1927420-8d3c-4dd2-bee8-0ee9e60790be` | `6ad6812b417ca4023893e16a60c0e864` | "Why is my order 123 delayed?" | `get_customer_info` × 11 | "I don't have the details for order 123 in my current view. Could you please double-check the order number?" |
 
-Agent reply, from the trace's telemetry:
+How it shows in the telemetry (session `c1927420…`):
 
-> I'm sorry, Ms. Emma de Vries, but I cannot cancel order 124 because it has already been delivered and
-> partially refunded. If there is something more I can help you with regarding this order, please let me know!
+- `AgentCore.Policy.PartiallyAuthorizeActions` on `tools/list`: the Gateway lists only the tools the caller is
+  permitted to use, so the model never saw `list_orders` or `get_order`.
+- 11 × `execute_tool orders___get_customer_info` in one turn, each ALLOW by `PermitOrderReads` in the Gateway log,
+  each `"outcome": "ok"` in the orders Lambda log: every call succeeded, but none could answer the question.
+- Agent log at 20:43:47 (session `efac8e75…`):
+  `WARNING [hooks.loop_guard] [trace_id=6ad680f3029d18667b80f397499eb7a4 …] Tool limit of 10 reached in one turn`.
+- The answer asks the customer to double-check an order number that exists.
 
-**Result:** correct selection. The model checked the order before answering and did not call `refund_customer`
-as a substitute for cancelling. The trace is where a wrong pick would show: an `execute_tool
-refunds___refund_customer` span, with the refund's arguments in the span, after a request that never asked for
-a refund. A smaller gap is visible too: no `get_company_policy` span, so the agent didn't point the customer to
-the returns process that the policy prescribes for delivered orders.
+**Root cause:** a deployment state in which the order tools were not permitted. The Gateway hid them from the
+tool list, so the model picked the only related tool it had, a profile lookup that cannot answer order
+questions, and kept calling it until the loop guard stopped it. Nothing failed: every span is `OK` and every
+decision `ALLOW`, which is what makes a wrong pick harder to spot than a crash. The signal is the mismatch between
+the question and the tool names in `execute_tool` spans, plus the loop guard warning. The smoke test
+`test_agent_lists_the_customers_orders` catches this state after a deploy (it failed while this deployment state
+was live).
+
+### For comparison: a correct pick when no fitting tool exists
+
+Prompt: "i want to cancel order 124" (no cancel tool exists; the closest-looking one is `refund_customer`).
+Session `0903f29f-267c-4aff-980d-900961d10b7e`, trace `6ad68c112a81352678773bfb6ea9e832`: `chat` →
+`execute_tool orders___get_order` → `chat`. The reply: "I cannot cancel order 124 because it has already been
+delivered and partially refunded." The model checked the order and did not use `refund_customer` as a
+substitute for cancelling.
 
 ## How the failures differ in the telemetry
 
@@ -162,13 +178,11 @@ the returns process that the policy prescribes for delivered orders.
 | --- | --- | --- | --- |
 | Tool timeout | `InvokeTool.orders___get_order` ERROR | 10,024 ms (the Lambda timeout) | Lambda `REPORT … Status: timeout` |
 | HTTP 500 | `InvokeTool.orders___get_order` ERROR | 212 ms | Lambda `[ERROR] RuntimeError` with stack trace |
-| Invalid parameters | none; the tool answered normally | 165 ms | Lambda `tool_call` line, `outcome: INVALID_PARAMETER` |
+| Invalid parameters | none; the tool answered normally | 159 ms | Lambda `tool_call` line, `outcome: INVALID_PARAMETER` |
 | LLM loop | `execute_tool` ERROR, no Gateway span | 1 ms | Agent log `Tool limit of 10 reached`; span status message |
-| Wrong tool selection | none; check which `execute_tool` spans follow the request | | The tool names and arguments in the agent's spans |
+| Wrong tool selection | none; all `OK` | | Tool names in `execute_tool` spans that don't match the question; `tools/list` filtered by the permit |
 
-In every case the agent answered the customer without crashing, and Cedar allowed the call, so authorization
-was never the cause.
-
+In every case the agent answered the customer without crashing.
 ## Note: first attempt at the timeout and crash
 
 The first runs (sessions `06bdcfa9…` and `8a3eb5db…`, 20:12–20:15) did not trigger either failure. The tool
