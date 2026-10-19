@@ -15,7 +15,7 @@ def tool_event(tool_name: str, tool_input: dict, customer_id: str | None = "CUST
     )
 
 
-@pytest.mark.parametrize("tool_name", ["orders___get_orders", "orders___get_customer_info", "refunds___refund_customer"])
+@pytest.mark.parametrize("tool_name", ["orders___list_orders", "orders___get_order", "orders___get_customer_info", "refunds___refund_customer"])
 def test_customer_scoped_tools_get_the_customer_from_state(tool_name):
     event = tool_event(tool_name, {"order_id": "123"})
     CustomerContextHook()._inject_customer_id(event)
@@ -37,7 +37,7 @@ def test_tools_that_are_not_customer_scoped_are_left_alone():
 
 
 def test_customer_scoped_call_is_cancelled_without_an_authenticated_customer():
-    event = tool_event("orders___get_orders", {}, customer_id=None)
+    event = tool_event("orders___list_orders", {}, customer_id=None)
     CustomerContextHook()._inject_customer_id(event)
     assert event.cancel_tool
     assert "customer_id" not in event.tool_use["input"]

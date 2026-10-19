@@ -80,16 +80,27 @@
           "targetType": "lambda",
           "toolDefinitions": [
             {
-              "name": "get_orders",
-              "description": "Get the current customer's orders. The customer is identified automatically from the session, so never ask for or pass a customer ID. Without order_id, returns a summary of all their orders (ID, status, date, total, item names), newest first; use it to list orders or find the one the customer means. With order_id, returns that order in full: items, totals, shipping and tracking, the delay reason if DELAYED, and refund history. Orders of other customers are reported as not found.",
+              "name": "list_orders",
+              "description": "List the current customer's orders: ID, status, date, total and item names, newest first. Use it when the customer asks about their orders in general or doesn't know the order ID. The customer is identified automatically from the session, so it takes no arguments.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            {
+              "name": "get_order",
+              "description": "Get one of the current customer's orders in full: items, totals, shipping and tracking, the delay reason if DELAYED, and refund history. Use it whenever the customer names an order ID, for example to explain a delay or check an order before a refund. The customer is identified automatically from the session, so never pass a customer ID. Orders of other customers are reported as not found.",
               "inputSchema": {
                 "type": "object",
                 "properties": {
                   "order_id": {
                     "type": "string",
-                    "description": "Optional. The order ID to return in full, for example \"123\". Leave out to list all orders."
+                    "description": "The order ID, for example \"123\"."
                   }
-                }
+                },
+                "required": [
+                  "order_id"
+                ]
               }
             },
             {
@@ -143,7 +154,7 @@
           "toolDefinitions": [
             {
               "name": "refund_customer",
-              "description": "Refund part or all of one of the current customer's orders to their original payment method. The customer is identified automatically from the session, so never pass a customer ID; orders of other customers are reported as not found. Check the order with get_orders first. Cancelled orders cannot be refunded, because cancelling already refunded them; refunding a delayed order in full cancels it. Refunds over 1000 EUR, alone or in total on one order, are not allowed and need a human support manager. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
+              "description": "Refund part or all of one of the current customer's orders to their original payment method. The customer is identified automatically from the session, so never pass a customer ID; orders of other customers are reported as not found. Check the order with get_order first. Cancelled orders cannot be refunded, because cancelling already refunded them; refunding a delayed order in full cancels it. Refunds over 1000 EUR, alone or in total on one order, are not allowed and need a human support manager. Use a new idempotency_key for each new refund, and reuse the same key when retrying the same refund so it is not issued twice.",
               "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -232,7 +243,7 @@
         },
         {
           "name": "PermitOrderReads",
-          "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::715075932719:assumed-role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht\", action in [AgentCore::Action::\"orders___get_orders\",AgentCore::Action::\"orders___get_customer_info\"], resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\");",
+          "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::715075932719:assumed-role/AgentCore-CustomerSupport-ApplicationAgentSupportAg-aaSeBABLnqht\", action in [AgentCore::Action::\"orders___list_orders\",AgentCore::Action::\"orders___get_order\",AgentCore::Action::\"orders___get_customer_info\"], resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:eu-central-1:715075932719:gateway/customersupport-support-gateway-klz7btjjhn\");",
           "validationMode": "IGNORE_ALL_FINDINGS",
           "enforcementMode": "ACTIVE",
           "authorizationPhase": "INITIATE"

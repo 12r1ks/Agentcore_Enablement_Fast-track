@@ -23,7 +23,9 @@ package = false
 testpaths = ["tests"]
 # Code is imported the way it is deployed: each folder is its own root.
 pythonpath = ["tools", "app/SupportAgent", "db"]
-addopts = "--import-mode=importlib"
+# Tests against the deployed stack need AWS and run only on request: uv run pytest -m deployed
+addopts = "--import-mode=importlib -m 'not deployed'"
+markers = ["deployed: runs against the deployed stack (needs AWS credentials)"]
 # Deprecations inside third-party libraries; warnings from this project's code still show.
 filterwarnings = [
     "ignore::DeprecationWarning:bedrock_agentcore.*",

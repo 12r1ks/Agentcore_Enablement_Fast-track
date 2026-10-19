@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from .company_info import get_company_policy
 from .errors import ToolError
-from .orders import get_customer_info, get_orders
+from .orders import get_customer_info, get_order, list_orders
 from .refunds import refund_customer
 
 logger = logging.getLogger()
@@ -19,7 +19,8 @@ _TARGET_DELIMITER = "___"
 
 TOOLS = {
     "get_company_policy": get_company_policy,
-    "get_orders": get_orders,
+    "list_orders": list_orders,
+    "get_order": get_order,
     "get_customer_info": get_customer_info,
     "refund_customer": refund_customer,
 }

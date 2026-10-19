@@ -8,12 +8,15 @@ def _summary(order: dict) -> dict:
     return {**{k: order[k] for k in _SUMMARY_FIELDS}, "items": [item["name"] for item in order["items"]]}
 
 
-def get_orders(args: dict) -> dict:
-    """Tool: one of the customer's orders in full when order_id is given, otherwise a summary of all their orders."""
+def list_orders(args: dict) -> dict:
+    """Tool: a summary of all the customer's orders, newest first."""
     customer_id = caller_customer_id(args)
-    if args.get("order_id") in (None, ""):
-        return {"orders": [_summary(order) for order in store.list_orders(customer_id)]}
+    return {"orders": [_summary(order) for order in store.list_orders(customer_id)]}
 
+
+def get_order(args: dict) -> dict:
+    """Tool: one of the customer's orders in full, with shipping, delay reason and refund history."""
+    customer_id = caller_customer_id(args)
     order_id = required_string(args, "order_id")
     order = store.get_order(order_id)
     # Another customer's order is reported as not found, so its existence is not revealed.
